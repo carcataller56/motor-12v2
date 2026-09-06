@@ -3,50 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Motor 12V</title>
+  <title>Control Cortina 12V</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; text-align: center; padding: 30px 15px; margin: 0; }
-    .card { max-width: 360px; margin: 0 auto; background: #1e1e1e; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); border: 1px solid #333; }
-    h2 { margin-top: 0; color: #f0f0f0; font-size: 22px; }
-    input[type="password"] { width: 80%; padding: 12px; font-size: 22px; text-align: center; border-radius: 8px; border: 1px solid #555; background: #2a2a2a; color: #fff; letter-spacing: 6px; margin-bottom: 20px; outline: none; }
-    .btn { width: 100%; background: #e74c3c; color: white; border: none; padding: 18px 0; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.2s; }
-    .btn:disabled { background: #555; cursor: not-allowed; }
-    .btn:active:not(:disabled) { transform: scale(0.97); background: #c0392b; }
-    #estado { margin-top: 20px; font-size: 15px; color: #aaa; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px 15px; margin: 0; }
+    .card { max-width: 380px; margin: 0 auto; background: #1e1e1e; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); border: 1px solid #333; }
+    h2 { margin: 0 0 15px 0; font-size: 22px; color: #f0f0f0; }
+    
+    .badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-bottom: 18px; }
+    .offline { background: #552020; color: #ff7b7b; border: 1px solid #ff4d4d; }
+    .online { background: #1b4324; color: #75f08a; border: 1px solid #2ecc71; }
+
+    .control-group { margin: 15px 0; text-align: left; }
+    label { font-size: 13px; color: #aaa; }
+    .slider-container { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+    input[type="range"] { flex-grow: 1; margin-right: 12px; height: 6px; accent-color: #3498db; }
+    .val-seg { font-size: 18px; font-weight: bold; width: 45px; text-align: right; color: #3498db; }
+
+    input[type="password"] { width: 80%; padding: 10px; font-size: 20px; text-align: center; border-radius: 8px; border: 1px solid #555; background: #2a2a2a; color: #fff; letter-spacing: 5px; margin: 10px 0 18px 0; outline: none; }
+    
+    .btn { width: 100%; background: #e74c3c; color: white; border: none; padding: 16px 0; font-size: 17px; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+    .btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+    .btn:active:not(:disabled) { transform: scale(0.98); background: #c0392b; }
+
+    .log-box { margin-top: 20px; padding: 12px; background: #252525; border-radius: 8px; font-size: 13px; text-align: left; border-left: 4px solid #3498db; }
+    .log-title { color: #888; margin-bottom: 4px; }
+    .log-val { color: #eee; font-weight: 500; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Control de Motor 12V</h2>
-    <p style="color: #aaa; font-size: 14px;">Ingresá el PIN de seguridad:</p>
-    <input type="password" id="pinInput" maxlength="6" placeholder="••••">
+    <h2>Control Cortina 12V</h2>
     
-    <button id="btnActivar" class="btn" onclick="intentarDisparo()" disabled>CONECTANDO...</button>
-    <p id="estado">Estableciendo enlace MQTT...</p>
+    <div id="badgeEsp" class="badge offline">ESP32 DESCONECTADO</div>
+
+    <div class="control-group">
+      <label>Tiempo de marcha:</label>
+      <div class="slider-container">
+        <input type="range" id="segundos" min="1" max="15" value="3" oninput="actualizarTextoSeg(this.value)">
+        <span id="txtSeg" class="val-seg">3s</span>
+      </div>
+    </div>
+
+    <div class="control-group" style="text-align: center;">
+      <label>PIN de seguridad:</label><br>
+      <input type="password" id="pinInput" maxlength="6" placeholder="••••">
+    </div>
+
+    <button id="btnActivar" class="btn" onclick="intentarDisparo()" disabled>DISPARAR MOTOR</button>
+
+    <div class="log-box">
+      <div class="log-title">Última activación:</div>
+      <div id="logEstado" class="log-val">Sin registros aún</div>
+    </div>
   </div>
 
   <script>
     const PIN_CORRECTO = "1234";
-    const TOPIC = "casa/control/motor_secreto_77";
-    
+    const TOPIC_CMD    = "casa/cortina/comando";
+    const TOPIC_STATUS = "casa/cortina/status";
+    const TOPIC_ACK    = "casa/cortina/ack";
+
     const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
-    const btn = document.getElementById('btnActivar');
-    const estado = document.getElementById('estado');
+    const badgeEsp  = document.getElementById('badgeEsp');
+    const btn       = document.getElementById('btnActivar');
+    const txtSeg    = document.getElementById('txtSeg');
+    const logEstado = document.getElementById('logEstado');
+    let espConectado = false;
+
+    function actualizarTextoSeg(val) {
+      txtSeg.innerText = val + "s";
+    }
 
     client.on('connect', () => {
-      btn.disabled = false;
-      btn.innerText = "ACTIVAR MOTOR (5s)";
-      estado.innerText = "Enlace listo. Esperando comando.";
-      estado.style.color = "#2ecc71";
+      client.subscribe(TOPIC_STATUS);
+      client.subscribe(TOPIC_ACK);
     });
 
-    client.on('offline', () => {
-      btn.disabled = true;
-      btn.innerText = "DESCONECTADO";
-      estado.innerText = "Reconectando al broker...";
-      estado.style.color = "#e74c3c";
+    client.on('message', (topic, message) => {
+      const msg = message.toString();
+
+      if (topic === TOPIC_STATUS) {
+        if (msg === "ONLINE") {
+          espConectado = true;
+          badgeEsp.className = "badge online";
+          badgeEsp.innerText = "ESP32 EN LÍNEA";
+          btn.disabled = false;
+        } else {
+          espConectado = false;
+          badgeEsp.className = "badge offline";
+          badgeEsp.innerText = "ESP32 DESCONECTADO";
+          btn.disabled = true;
+        }
+      }
+
+      if (topic === TOPIC_ACK) {
+        // Formato recibido del ESP32: "OK:3s"
+        const ahora = new Date().toLocaleTimeString();
+        logEstado.innerText = `Ejecutado a las ${ahora} (${msg.replace('OK:', '')})`;
+      }
     });
 
     function intentarDisparo() {
@@ -57,17 +113,18 @@
         return;
       }
 
+      const duracion = document.getElementById('segundos').value;
       btn.disabled = true;
-      client.publish(TOPIC, 'PULSO_5S');
-      estado.innerText = "¡Orden enviada con éxito!";
-      estado.style.color = "#3498db";
+      btn.innerText = `EJECUTANDO (${duracion}s)...`;
+
+      // Envía comando en formato: "RUN:3"
+      client.publish(TOPIC_CMD, `RUN:${duracion}`);
 
       setTimeout(() => {
-        btn.disabled = false;
-        estado.innerText = "Enlace listo.";
-        estado.style.color = "#2ecc71";
+        if (espConectado) btn.disabled = false;
+        btn.innerText = "DISPARAR MOTOR";
         document.getElementById('pinInput').value = "";
-      }, 6000);
+      }, (parseInt(duracion) + 1) * 1000);
     }
   </script>
 </body>
