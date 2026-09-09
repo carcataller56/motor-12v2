@@ -1,130 +1,62 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invernadero | Control Remoto</title>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <style>
-    :root { --bg: #121212; --card: #1e1e1e; --accent: #3498db; }
-    body { font-family: sans-serif; background: var(--bg); color: #e0e0e0; margin: 0; padding: 20px 15px; text-align: center; }
-    .card { max-width: 420px; margin: 0 auto; background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #2a2a2a; margin-bottom: 20px; }
-    h2 { margin: 0 0 20px 0; font-size: 22px; border-bottom: 2px solid #333; padding-bottom: 10px; color: #fff; }
-    
-    .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-bottom: 20px; }
-    .offline { background: #4a1515; color: #ff7b7b; border: 1px solid #ff4d4d; }
-    .online { background: #154a22; color: #75f08a; border: 1px solid #2ecc71; }
-
-    .control-group { background: #252525; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; }
-    input[type="number"] { width: 70px; padding: 10px; font-size: 20px; text-align: center; border-radius: 8px; border: 1px solid #444; background: #121212; color: var(--accent); font-weight: bold; }
-    input[type="password"] { width: 100%; padding: 12px; font-size: 22px; text-align: center; border-radius: 8px; border: 1px solid #555; background: #121212; color: #fff; letter-spacing: 8px; margin-bottom: 15px; box-sizing: border-box; }
-    
-    .btn { width: 100%; padding: 18px; margin: 6px 0; font-size: 16px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: #fff; transition: 0.2s; }
-    .btn-subir { background: #2980b9; } .btn-bajar { background: #d35400; } 
-    .btn-stop { background: #c0392b; margin-top: 15px; border: 2px solid #e74c3c; }
-    .btn:disabled { background: #333; color: #666; border-color: #333; }
-
-    .log-box { background: #080808; border: 1px solid #333; border-radius: 8px; padding: 12px; height: 220px; overflow-y: auto; text-align: left; font-family: monospace; font-size: 13px; line-height: 1.5; }
-    .log-line { border-bottom: 1px dashed #1f1f1f; padding: 4px 0; }
-    .log-line:last-child { border-bottom: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control</title>
+    <style>
+        body { 
+            text-align: center; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background-color: #121212; 
+            color: #ffffff; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        h2 {
+            margin-bottom: 40px;
+            font-size: 28px;
+            color: #aaaaaa;
+        }
+        button { 
+            display: block; 
+            width: 85%; 
+            max-width: 350px; 
+            margin: 15px auto; 
+            padding: 20px 20px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer;
+            box-shadow: 0px 8px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s ease 0s;
+        }
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.5);
+        }
+        .btn-subir { 
+            background-color: #00b894; 
+            color: white; 
+        }
+        .btn-bajar { 
+            background-color: #0984e3; 
+            color: white; 
+        }
+    </style>
 </head>
 <body>
-  
-  <div class="card">
-    <h2>🌍 Control Remoto</h2>
-    <div id="badgeEsp" class="badge offline">Buscando Invernadero...</div>
+
+    <h2>Control de Cortina</h2>
     
-    <div class="control-group">
-      <label style="font-weight:bold;color:#aaa;">⏱️ Tiempo (min):</label>
-      <input type="number" id="mins" min="1" max="15" value="1">
-    </div>
+    <button class="btn-subir" onclick="alert('Comando enviado con éxito.')">hacerle la vida mas facil a duam</button>
+    
+    <button class="btn-bajar" onclick="alert('Comando enviado con éxito.')">demostrar que el capitalismo mejora al mundo</button>
 
-    <div style="text-align: left; margin-bottom: 5px; color: #aaa; font-size: 13px; font-weight: bold;">PIN de Seguridad:</div>
-    <input type="password" id="pinInput" maxlength="4" placeholder="••••">
-
-    <button id="btnSubir" class="btn btn-subir" onclick="intentarDisparo('SUBIR')" disabled>▲ SUBIR CORTINA</button>
-    <button id="btnBajar" class="btn btn-bajar" onclick="intentarDisparo('BAJAR')" disabled>▼ BAJAR CORTINA</button>
-    <button id="btnStop" class="btn btn-stop" onclick="enviarParada()" disabled>🛑 PARADA INMEDIATA</button>
-  </div>
-
-  <div class="card">
-    <h2>📝 Bitácora Sincronizada</h2>
-    <div class="log-box" id="logContainer">Esperando historial desde la placa...</div>
-  </div>
-
-  <script>
-    const PIN_CORRECTO = "1234"; 
-    const TOPIC_CMD    = "casa/cortina/comando";
-    const TOPIC_STATUS = "casa/cortina/status";
-    const TOPIC_LOGS   = "casa/cortina/logs";
-
-    const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-    const badgeEsp     = document.getElementById('badgeEsp');
-    const btnSubir     = document.getElementById('btnSubir');
-    const btnBajar     = document.getElementById('btnBajar');
-    const btnStop      = document.getElementById('btnStop');
-    const logContainer = document.getElementById('logContainer');
-
-    client.on('connect', () => {
-      client.subscribe(TOPIC_STATUS);
-      client.subscribe(TOPIC_LOGS);
-    });
-
-    client.on('message', (topic, message) => {
-      const msg = message.toString();
-
-      if (topic === TOPIC_STATUS) {
-        if (msg === "ONLINE") {
-          badgeEsp.className = "badge online"; badgeEsp.innerText = "INVERNADERO EN LÍNEA";
-          btnSubir.disabled = false; btnBajar.disabled = false; btnStop.disabled = false;
-        } else {
-          badgeEsp.className = "badge offline"; badgeEsp.innerText = "INVERNADERO DESCONECTADO";
-          btnSubir.disabled = true; btnBajar.disabled = true; btnStop.disabled = true;
-        }
-      }
-
-      if (topic === TOPIC_LOGS) {
-        try {
-          const logsArray = JSON.parse(msg);
-          let html = "";
-          
-          // Invertimos el array para que el más nuevo salga abajo como en una terminal real
-          logsArray.slice().reverse().forEach(l => {
-            let color = "#00ff00"; // Verde (Confirmaciones normales)
-            if (l.includes("Botón físico") || l.includes("Web Local") || l.includes("Internet")) color = "#3498db"; // Azul
-            if (l.includes("STOP") || l.includes("Detenido") || l.includes("soltado")) color = "#e74c3c"; // Rojo
-            if (l.includes("Sistema Iniciado") || l.includes("Wi-Fi") || l.includes("Conectado")) color = "#f1c40f"; // Amarillo
-            
-            html += `<div class="log-line"><span style="color:${color};">${l}</span></div>`;
-          });
-          
-          const scrollBottom = logContainer.scrollHeight - logContainer.scrollTop === logContainer.clientHeight;
-          logContainer.innerHTML = html || "Sin registros.";
-          if (scrollBottom) logContainer.scrollTop = logContainer.scrollHeight;
-
-        } catch (e) {
-          console.error("Error leyendo logs:", e);
-        }
-      }
-    });
-
-    function enviarParada() {
-      client.publish(TOPIC_CMD, "STOP");
-      btnSubir.disabled = false; btnBajar.disabled = false;
-    }
-
-    function intentarDisparo(direccion) {
-      const pin = document.getElementById('pinInput').value;
-      if (pin !== PIN_CORRECTO) { alert("PIN incorrecto."); document.getElementById('pinInput').value = ""; return; }
-      
-      const minutos = parseInt(document.getElementById('mins').value);
-      if (minutos <= 0 || isNaN(minutos)) return;
-      
-      btnSubir.disabled = true; btnBajar.disabled = true;
-      client.publish(TOPIC_CMD, `${direccion}:${minutos * 60}`);
-      document.getElementById('pinInput').value = ""; 
-    }
-  </script>
 </body>
 </html>
