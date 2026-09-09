@@ -22,16 +22,14 @@
     input[type="password"] { width: 100%; padding: 12px; font-size: 22px; text-align: center; border-radius: 8px; border: 1px solid #555; background: #121212; color: #fff; letter-spacing: 8px; margin-bottom: 15px; box-sizing: border-box; outline: none; transition: border 0.3s; }
     input[type="password"]:focus { border-color: var(--accent); }
     
-    .btn { width: 100%; padding: 18px; margin: 6px 0; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: #fff; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-subir { background: linear-gradient(135deg, #2980b9, #1f618d); }
-    .btn-bajar { background: linear-gradient(135deg, #d35400, #a04000); }
-    .btn-stop { background: linear-gradient(135deg, #c0392b, #922b21); margin-top: 15px; border: 2px solid #e74c3c; font-size: 16px; }
+    .btn { width: 100%; padding: 18px; margin: 6px 0; font-size: 16px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: #fff; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-abrir { background: linear-gradient(135deg, #2980b9, #1f618d); }
+    .btn-cerrar { background: linear-gradient(135deg, #d35400, #a04000); }
+    .btn-stop { background: linear-gradient(135deg, #c0392b, #922b21); margin-top: 15px; border: 2px solid #e74c3c; }
     .btn:active:not(:disabled) { transform: scale(0.98); opacity: 0.8; }
     .btn:disabled { background: #333; color: #666; border-color: #333; cursor: not-allowed; }
 
     .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .btn-clear { background: #333; color: #aaa; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-    .btn-clear:hover { background: #444; color: #fff; }
     .log-box { background: #080808; border: 1px solid #333; border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; scroll-behavior: smooth; }
     .log-line { border-bottom: 1px dashed #1f1f1f; padding: 4px 0; word-wrap: break-word; }
     .log-line:last-child { border-bottom: none; }
@@ -55,9 +53,8 @@
     <div style="text-align: left; margin-bottom: 5px; color: #aaa; font-size: 13px; font-weight: bold;">PIN de Seguridad:</div>
     <input type="password" id="pinInput" maxlength="4" placeholder="••••">
 
-    <!-- ACÁ ESTÁ LA MAGIA PARA DUAM -->
-    <button id="btnSubir" class="btn btn-subir" onclick="intentarDisparo('SUBIR')" disabled>▲ HACERLE LA VIDA MÁS FÁCIL A DUAM</button>
-    <button id="btnBajar" class="btn btn-bajar" onclick="intentarDisparo('BAJAR')" disabled>▼ LUCHAR CONTRA EL IMPERIALISMO DESDE LA WEB</button>
+    <button id="btnAbrir" class="btn btn-abrir" onclick="intentarDisparo('ABRIR')" disabled>▲ ABRIR TOLDO</button>
+    <button id="btnCerrar" class="btn btn-cerrar" onclick="intentarDisparo('CERRAR')" disabled>▼ CERRAR TOLDO</button>
     
     <button id="btnStop" class="btn btn-stop" onclick="enviarParada()" disabled>🛑 PARADA INMEDIATA</button>
   </div>
@@ -73,7 +70,7 @@
   </div>
 
   <script>
-    const PIN_CORRECTO = "1234";
+    const PIN_CORRECTO = "1234"; 
     const TOPIC_CMD    = "casa/cortina/comando";
     const TOPIC_STATUS = "casa/cortina/status";
     const TOPIC_LOGS   = "casa/cortina/logs";
@@ -81,8 +78,8 @@
     const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
     const badgeEsp     = document.getElementById('badgeEsp');
-    const btnSubir     = document.getElementById('btnSubir');
-    const btnBajar     = document.getElementById('btnBajar');
+    const btnAbrir     = document.getElementById('btnAbrir');
+    const btnCerrar    = document.getElementById('btnCerrar');
     const btnStop      = document.getElementById('btnStop');
     const logContainer = document.getElementById('logContainer');
     const inputPin     = document.getElementById('pinInput');
@@ -106,14 +103,14 @@
         if (msg === "ONLINE") {
           badgeEsp.className = "badge online";
           badgeEsp.innerText = "INVERNADERO EN LÍNEA";
-          btnSubir.disabled = false;
-          btnBajar.disabled = false;
+          btnAbrir.disabled = false;
+          btnCerrar.disabled = false;
           btnStop.disabled = false;
         } else {
           badgeEsp.className = "badge offline";
           badgeEsp.innerText = "INVERNADERO DESCONECTADO";
-          btnSubir.disabled = true;
-          btnBajar.disabled = true;
+          btnAbrir.disabled = true;
+          btnCerrar.disabled = true;
           btnStop.disabled = true;
         }
       }
@@ -144,8 +141,8 @@
 
     function enviarParada() {
       client.publish(TOPIC_CMD, "STOP");
-      btnSubir.disabled = false;
-      btnBajar.disabled = false;
+      btnAbrir.disabled = false;
+      btnCerrar.disabled = false;
     }
 
     function intentarDisparo(direccion) {
@@ -153,8 +150,8 @@
       
       if (pin !== PIN_CORRECTO) {
         alert("PIN de seguridad incorrecto.");
-        inputPin.value = "";
-        localStorage.removeItem('pinInvernadero');
+        inputPin.value = ""; 
+        localStorage.removeItem('pinInvernadero'); 
         return;
       }
 
@@ -165,8 +162,8 @@
       
       const segundosTotales = minutos * 60;
 
-      btnSubir.disabled = true;
-      btnBajar.disabled = true;
+      btnAbrir.disabled = true;
+      btnCerrar.disabled = true;
 
       client.publish(TOPIC_CMD, `${direccion}:${segundosTotales}`);
     }
