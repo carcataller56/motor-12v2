@@ -96,16 +96,21 @@
       client.subscribe(TOPIC_LOGS);
     });
 
+    // LÓGICA REFORZADA
+    function forzarOnline() {
+      badgeEsp.className = "badge online";
+      badgeEsp.innerText = "INVERNADERO EN LÍNEA";
+      btnAbrir.disabled = false;
+      btnCerrar.disabled = false;
+      btnStop.disabled = false;
+    }
+
     client.on('message', (topic, message) => {
       const msg = message.toString();
 
       if (topic === TOPIC_STATUS) {
         if (msg === "ONLINE") {
-          badgeEsp.className = "badge online";
-          badgeEsp.innerText = "INVERNADERO EN LÍNEA";
-          btnAbrir.disabled = false;
-          btnCerrar.disabled = false;
-          btnStop.disabled = false;
+          forzarOnline();
         } else {
           badgeEsp.className = "badge offline";
           badgeEsp.innerText = "INVERNADERO DESCONECTADO";
@@ -116,6 +121,9 @@
       }
 
       if (topic === TOPIC_LOGS) {
+        // PARCHE: Si recibimos logs, la placa ESTÁ VIVA, ignoramos el cartel de offline
+        forzarOnline(); 
+
         try {
           const logsArray = JSON.parse(msg);
           let html = "";
