@@ -6,56 +6,38 @@
   <title>Invernadero | Control Remoto</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
-    :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #3498db; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px 15px; text-align: center; }
-    .card { max-width: 420px; margin: 0 auto; background: var(--card); padding: 25px; border-radius: 16px; box-shadow: 0 8px 16px rgba(0,0,0,0.6); border: 1px solid #2a2a2a; margin-bottom: 20px; }
+    :root { --bg: #121212; --card: #1e1e1e; --accent: #3498db; }
+    body { font-family: sans-serif; background: var(--bg); color: #e0e0e0; margin: 0; padding: 20px 15px; text-align: center; }
+    .card { max-width: 420px; margin: 0 auto; background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #2a2a2a; margin-bottom: 20px; }
     h2 { margin: 0 0 20px 0; font-size: 22px; border-bottom: 2px solid #333; padding-bottom: 10px; color: #fff; }
     
-    /* Badge de Conexión */
-    .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-bottom: 20px; letter-spacing: 1px; transition: 0.3s; }
+    .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-bottom: 20px; }
     .offline { background: #4a1515; color: #ff7b7b; border: 1px solid #ff4d4d; }
     .online { background: #154a22; color: #75f08a; border: 1px solid #2ecc71; }
 
-    /* Inputs y Controles */
     .control-group { background: #252525; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; }
-    .control-group label { font-weight: bold; color: #aaa; }
-    input[type="number"] { width: 70px; padding: 10px; font-size: 20px; text-align: center; border-radius: 8px; border: 1px solid #444; background: #121212; color: var(--accent); font-weight: bold; outline: none; }
+    input[type="number"] { width: 70px; padding: 10px; font-size: 20px; text-align: center; border-radius: 8px; border: 1px solid #444; background: #121212; color: var(--accent); font-weight: bold; }
+    input[type="password"] { width: 100%; padding: 12px; font-size: 22px; text-align: center; border-radius: 8px; border: 1px solid #555; background: #121212; color: #fff; letter-spacing: 8px; margin-bottom: 15px; box-sizing: border-box; }
     
-    input[type="password"] { width: 100%; padding: 12px; font-size: 22px; text-align: center; border-radius: 8px; border: 1px solid #555; background: #121212; color: #fff; letter-spacing: 8px; margin-bottom: 15px; box-sizing: border-box; outline: none; transition: border 0.3s; }
-    input[type="password"]:focus { border-color: var(--accent); }
-    
-    /* Botones */
-    .btn { width: 100%; padding: 18px; margin: 6px 0; font-size: 16px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: #fff; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-subir { background: linear-gradient(135deg, #2980b9, #1f618d); }
-    .btn-bajar { background: linear-gradient(135deg, #d35400, #a04000); }
-    .btn-stop { background: linear-gradient(135deg, #c0392b, #922b21); margin-top: 15px; border: 2px solid #e74c3c; }
-    .btn:active:not(:disabled) { transform: scale(0.98); opacity: 0.8; }
-    .btn:disabled { background: #333; color: #666; border-color: #333; cursor: not-allowed; }
+    .btn { width: 100%; padding: 18px; margin: 6px 0; font-size: 16px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: #fff; transition: 0.2s; }
+    .btn-subir { background: #2980b9; } .btn-bajar { background: #d35400; } 
+    .btn-stop { background: #c0392b; margin-top: 15px; border: 2px solid #e74c3c; }
+    .btn:disabled { background: #333; color: #666; border-color: #333; }
 
-    /* Consola de Logs Web */
-    .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .btn-clear { background: #333; color: #aaa; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-    .btn-clear:hover { background: #444; color: #fff; }
-    
-    .log-box { background: #080808; border: 1px solid #333; border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; scroll-behavior: smooth; }
-    .log-line { border-bottom: 1px dashed #1f1f1f; padding: 4px 0; word-wrap: break-word; }
+    .log-box { background: #080808; border: 1px solid #333; border-radius: 8px; padding: 12px; height: 220px; overflow-y: auto; text-align: left; font-family: monospace; font-size: 13px; line-height: 1.5; }
+    .log-line { border-bottom: 1px dashed #1f1f1f; padding: 4px 0; }
     .log-line:last-child { border-bottom: none; }
-    .log-time { color: #666; font-size: 11px; margin-right: 6px; }
   </style>
 </head>
 <body>
   
   <div class="card">
     <h2>🌍 Control Remoto</h2>
-    
     <div id="badgeEsp" class="badge offline">Buscando Invernadero...</div>
-
+    
     <div class="control-group">
-      <label>⏱️ Tiempo de marcha:</label>
-      <div>
-        <input type="number" id="mins" min="1" max="15" value="1">
-        <span style="color:#aaa; margin-left:5px;">min.</span>
-      </div>
+      <label style="font-weight:bold;color:#aaa;">⏱️ Tiempo (min):</label>
+      <input type="number" id="mins" min="1" max="15" value="1">
     </div>
 
     <div style="text-align: left; margin-bottom: 5px; color: #aaa; font-size: 13px; font-weight: bold;">PIN de Seguridad:</div>
@@ -63,91 +45,30 @@
 
     <button id="btnSubir" class="btn btn-subir" onclick="intentarDisparo('SUBIR')" disabled>▲ SUBIR CORTINA</button>
     <button id="btnBajar" class="btn btn-bajar" onclick="intentarDisparo('BAJAR')" disabled>▼ BAJAR CORTINA</button>
-    
     <button id="btnStop" class="btn btn-stop" onclick="enviarParada()" disabled>🛑 PARADA INMEDIATA</button>
   </div>
 
   <div class="card">
-    <div class="log-header">
-      <h2 style="margin: 0; border: none; padding: 0;">📝 Bitácora de Eventos</h2>
-      <button class="btn-clear" onclick="limpiarLogs()">Borrar Todo</button>
-    </div>
-    
-    <div class="log-box" id="logContainer">
-      <!-- Los logs aparecerán aquí -->
-    </div>
+    <h2>📝 Bitácora Sincronizada</h2>
+    <div class="log-box" id="logContainer">Esperando historial desde la placa...</div>
   </div>
 
   <script>
     const PIN_CORRECTO = "1234"; 
     const TOPIC_CMD    = "casa/cortina/comando";
     const TOPIC_STATUS = "casa/cortina/status";
-    const TOPIC_ACK    = "casa/cortina/ack";
-    const MAX_LOGS     = 30; // Guarda hasta 30 eventos
+    const TOPIC_LOGS   = "casa/cortina/logs";
 
     const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-
     const badgeEsp     = document.getElementById('badgeEsp');
     const btnSubir     = document.getElementById('btnSubir');
     const btnBajar     = document.getElementById('btnBajar');
     const btnStop      = document.getElementById('btnStop');
     const logContainer = document.getElementById('logContainer');
-    
-    let espConectado = false;
-    let historialLogs = JSON.parse(localStorage.getItem('logsInvernadero')) || [];
 
-    // Función para renderizar los logs en pantalla
-    function actualizarPantallaLogs() {
-      if (historialLogs.length === 0) {
-        logContainer.innerHTML = "<div style='color:#555; text-align:center; margin-top:20px;'>Sin registros en la memoria...</div>";
-        return;
-      }
-      
-      let html = "";
-      historialLogs.forEach(log => {
-        html += `<div class="log-line"><span class="log-time">[${log.hora}]</span> <span style="color:${log.color};">${log.mensaje}</span></div>`;
-      });
-      logContainer.innerHTML = html;
-      logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll al final
-    }
-
-    // Función para agregar un evento y guardarlo en el navegador
-    function registrarEvento(mensaje, tipoColor) {
-      const ahora = new Date().toLocaleTimeString('es-AR', { hour12: false });
-      
-      let colorAplicado = "#00ff00"; // Verde por defecto (Confirmaciones)
-      if (tipoColor === "comando") colorAplicado = "#3498db"; // Azul
-      if (tipoColor === "error" || mensaje.includes("STOP") || mensaje.includes("DESCONECTADO")) colorAplicado = "#e74c3c"; // Rojo
-      if (tipoColor === "sistema") colorAplicado = "#f1c40f"; // Amarillo
-
-      historialLogs.push({ hora: ahora, mensaje: mensaje, color: colorAplicado });
-      
-      // Si se pasa de 30 logs, borra el más viejo
-      if (historialLogs.length > MAX_LOGS) {
-        historialLogs.shift();
-      }
-      
-      localStorage.setItem('logsInvernadero', JSON.stringify(historialLogs));
-      actualizarPantallaLogs();
-    }
-
-    // Limpiar historial
-    function limpiarLogs() {
-      if(confirm("¿Seguro que querés borrar el historial del navegador?")) {
-        historialLogs = [];
-        localStorage.removeItem('logsInvernadero');
-        actualizarPantallaLogs();
-      }
-    }
-
-    // Arranque inicial
-    actualizarPantallaLogs();
-
-    // ================== LOGICA MQTT ==================
     client.on('connect', () => {
       client.subscribe(TOPIC_STATUS);
-      client.subscribe(TOPIC_ACK);
-      registrarEvento("Conectado al servidor global. Esperando placa...", "sistema");
+      client.subscribe(TOPIC_LOGS);
     });
 
     client.on('message', (topic, message) => {
@@ -155,59 +76,53 @@
 
       if (topic === TOPIC_STATUS) {
         if (msg === "ONLINE") {
-          espConectado = true;
-          badgeEsp.className = "badge online";
-          badgeEsp.innerText = "INVERNADERO EN LÍNEA";
-          btnSubir.disabled = false;
-          btnBajar.disabled = false;
-          btnStop.disabled = false;
-          registrarEvento("La placa se conectó a Internet. Lista para operar.", "sistema");
+          badgeEsp.className = "badge online"; badgeEsp.innerText = "INVERNADERO EN LÍNEA";
+          btnSubir.disabled = false; btnBajar.disabled = false; btnStop.disabled = false;
         } else {
-          espConectado = false;
-          badgeEsp.className = "badge offline";
-          badgeEsp.innerText = "INVERNADERO DESCONECTADO";
-          btnSubir.disabled = true;
-          btnBajar.disabled = true;
-          btnStop.disabled = true;
-          registrarEvento("ALERTA: La placa perdió conexión a Internet.", "error");
+          badgeEsp.className = "badge offline"; badgeEsp.innerText = "INVERNADERO DESCONECTADO";
+          btnSubir.disabled = true; btnBajar.disabled = true; btnStop.disabled = true;
         }
       }
 
-      if (topic === TOPIC_ACK) {
-        registrarEvento(msg, "confirmacion");
-        if (espConectado) {
-          btnSubir.disabled = false;
-          btnBajar.disabled = false;
+      if (topic === TOPIC_LOGS) {
+        try {
+          const logsArray = JSON.parse(msg);
+          let html = "";
+          
+          // Invertimos el array para que el más nuevo salga abajo como en una terminal real
+          logsArray.slice().reverse().forEach(l => {
+            let color = "#00ff00"; // Verde (Confirmaciones normales)
+            if (l.includes("Botón físico") || l.includes("Web Local") || l.includes("Internet")) color = "#3498db"; // Azul
+            if (l.includes("STOP") || l.includes("Detenido") || l.includes("soltado")) color = "#e74c3c"; // Rojo
+            if (l.includes("Sistema Iniciado") || l.includes("Wi-Fi") || l.includes("Conectado")) color = "#f1c40f"; // Amarillo
+            
+            html += `<div class="log-line"><span style="color:${color};">${l}</span></div>`;
+          });
+          
+          const scrollBottom = logContainer.scrollHeight - logContainer.scrollTop === logContainer.clientHeight;
+          logContainer.innerHTML = html || "Sin registros.";
+          if (scrollBottom) logContainer.scrollTop = logContainer.scrollHeight;
+
+        } catch (e) {
+          console.error("Error leyendo logs:", e);
         }
       }
     });
 
-    // ================== ENVIOS DEL USUARIO ==================
     function enviarParada() {
       client.publish(TOPIC_CMD, "STOP");
-      registrarEvento("Enviando comando: PARADA INMEDIATA", "error");
-      btnSubir.disabled = false;
-      btnBajar.disabled = false;
+      btnSubir.disabled = false; btnBajar.disabled = false;
     }
 
     function intentarDisparo(direccion) {
       const pin = document.getElementById('pinInput').value;
-      if (pin !== PIN_CORRECTO) {
-        alert("PIN de seguridad incorrecto.");
-        document.getElementById('pinInput').value = "";
-        return;
-      }
-
+      if (pin !== PIN_CORRECTO) { alert("PIN incorrecto."); document.getElementById('pinInput').value = ""; return; }
+      
       const minutos = parseInt(document.getElementById('mins').value);
       if (minutos <= 0 || isNaN(minutos)) return;
-      const segundosTotales = minutos * 60;
-
-      btnSubir.disabled = true;
-      btnBajar.disabled = true;
-
-      client.publish(TOPIC_CMD, `${direccion}:${segundosTotales}`);
       
-      registrarEvento(`Enviando orden: ${direccion} por ${minutos} min...`, "comando");
+      btnSubir.disabled = true; btnBajar.disabled = true;
+      client.publish(TOPIC_CMD, `${direccion}:${minutos * 60}`);
       document.getElementById('pinInput').value = ""; 
     }
   </script>
