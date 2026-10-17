@@ -73,6 +73,10 @@
       font-weight: bold; 
       outline: none; 
     }
+    .input-umbral {
+      width: 100px !important;
+      color: #f1c40f !important;
+    }
     input[type="password"] { 
       width: 100%; 
       padding: 12px; 
@@ -107,6 +111,7 @@
     .btn-abrir { background: linear-gradient(135deg, #2980b9, #1f618d); }
     .btn-cerrar { background: linear-gradient(135deg, #d35400, #a04000); }
     .btn-stop { background: linear-gradient(135deg, #c0392b, #922b21); margin-top: 15px; border: 2px solid #e74c3c; }
+    .btn-save { background: linear-gradient(135deg, #27ae60, #1e8449); margin-top: 10px; }
     .btn:active:not(:disabled) { transform: scale(0.95); opacity: 0.8; }
     .btn:disabled { background: #333; color: #666; border-color: #333; cursor: not-allowed; }
     
@@ -189,6 +194,20 @@
     <button id="btnStop" class="btn btn-stop" onclick="enviarParada()" disabled>🛑 PARADA INMEDIATA</button>
   </div>
 
+  <!-- NUEVA TARJETA: AJUSTE DE UMBRALES DE SOBRECARGA -->
+  <div class="card">
+    <h2>⚙️ Umbrales de Protección</h2>
+    <div class="control-group">
+      <label>Umbral Abrir:</label>
+      <input type="number" id="umbralAbrir" class="input-umbral" value="4000" step="100">
+    </div>
+    <div class="control-group">
+      <label>Umbral Cerrar:</label>
+      <input type="number" id="umbralCerrar" class="input-umbral" value="4600" step="100">
+    </div>
+    <button id="btnUmbrales" class="btn btn-save" onclick="guardarUmbrales()" disabled>💾 Actualizar Umbrales</button>
+  </div>
+
   <div class="card">
     <h2>🌡️ Panel en Vivo</h2>
     <div class="clima-grid">
@@ -221,7 +240,8 @@
       document.getElementById('btnCerrar'), 
       document.getElementById('btnStop'), 
       document.getElementById('btnForzAbrir'), 
-      document.getElementById('btnForzCerrar')
+      document.getElementById('btnForzCerrar'),
+      document.getElementById('btnUmbrales')
     ];
     const logContainer = document.getElementById('logContainer');
     const logClimaContainer = document.getElementById('logClimaContainer');
@@ -288,7 +308,7 @@
               if (l.includes("físico") || l.includes("Web") || l.includes("Internet")) color = "#3498db"; 
               if (l.includes("FORZADO")) color = "#e67e22"; 
               if (l.includes("STOP") || l.includes("Detenido") || l.includes("soltado") || l.includes("SOBRECARGA") || l.includes("Pico:")) color = "#e74c3c"; 
-              if (l.includes("Iniciado")) color = "#f1c40f"; 
+              if (l.includes("Iniciado") || l.includes("Umbrales")) color = "#f1c40f"; 
               htmlMotor += `<div class="log-line"><span style="color:${color};">${l}</span></div>`;
             });
             const scrollBottom = logContainer.scrollHeight - logContainer.scrollTop === logContainer.clientHeight;
@@ -328,6 +348,30 @@
     }
     
     function detenerForzado() { client.publish(TOPIC_CMD, "STOP"); }
+
+    // Función para enviar el comando de umbrales con protección de PIN
+    function guardarUmbrales() {
+      const pin = inputPin.value;
+      if (pin !== PIN_CORRECTO) { 
+        alert("PIN incorrecto para guardar umbrales."); 
+        inputPin.value = ""; 
+        localStorage.removeItem('pinInvernadero'); 
+        return; 
+      }
+      localStorage.setItem('pinInvernadero', pin);
+
+      const abrirVal = document.getElementById('umbralAbrir').value;
+      const cerrarVal = document.getElementById('umbralCerrar').value;
+
+      if (!abrirVal || !cerrarVal) {
+        alert("Por favor completá ambos umbrales.");
+        return;
+      }
+
+      // Publicamos al mismo canal de comandos con el formato UMBRALES:abrir,cerrar
+      client.publish(TOPIC_CMD, `UMBRALES:${abrirVal},${cerrarVal}`);
+      alert("¡Comando de actualización de umbrales enviado!");
+    }
 
     const btnFA = document.getElementById('btnForzAbrir'); 
     const btnFC = document.getElementById('btnForzCerrar');
