@@ -42,7 +42,7 @@
     .val-temp { color: #e74c3c; } .val-hum { color: #3498db; } .val-suelo { color: #2ecc71; } .val-fuerza { color: #f1c40f; }
 
     .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .log-box { background: #080808; border: 1px solid #333; border-radius: 8px; padding: 12px; height: 160px; overflow-y: auto; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; scroll-behavior: smooth; margin-bottom: 15px; }
+    .log-box { background: #080808; border: 1px solid #333; border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; scroll-behavior: smooth; margin-bottom: 15px; }
     .log-line { border-bottom: 1px dashed #1f1f1f; padding: 4px 0; word-wrap: break-word; }
   </style>
 </head>
@@ -97,20 +97,17 @@
   </div>
 
   <div class="card">
-    <h2>🌡️ Panel en Vivo</h2>
+    <h2>🌡️ Clima y Fuerza (En Vivo)</h2>
     <div class="clima-grid">
       <div class="clima-box"><div class="clima-title">Temp. Aire</div><div id="rt-temp" class="clima-val val-temp">--°C</div></div>
       <div class="clima-box"><div class="clima-title">Hum. Aire</div><div id="rt-hum" class="clima-val val-hum">--%</div></div>
       <div class="clima-box"><div class="clima-title">Hum. Suelo</div><div id="rt-suelo" class="clima-val val-suelo">--</div></div>
       <div class="clima-box"><div class="clima-title">Fuerza Motor</div><div id="rt-fuerza" class="clima-val val-fuerza">Reposo</div></div>
     </div>
-    
-    <div class="log-header"><h3 style="margin: 0; font-size: 16px;">📊 Promedios Diarios</h3></div>
-    <div class="log-box" id="logClimaContainer">Esperando historial...</div>
   </div>
 
   <div class="card">
-    <div class="log-header"><h3 style="margin: 0; font-size: 16px;">📝 Historial de Eventos</h3></div>
+    <div class="log-header"><h3 style="margin: 0; font-size: 16px;">📝 Registro de Motor y Sistema</h3></div>
     <div class="log-box" id="logContainer">Esperando historial...</div>
   </div>
 
@@ -133,7 +130,6 @@
       document.getElementById('btnHorarios')
     ];
     const logContainer = document.getElementById('logContainer');
-    const logClimaContainer = document.getElementById('logClimaContainer');
     const inputPin = document.getElementById('pinInput');
 
     let bloqueoEdicionHasta = 0;
@@ -179,12 +175,6 @@
             if(data.h_cerrar && document.activeElement.id !== 'timeCerrar') document.getElementById('timeCerrar').value = data.h_cerrar;
           }
 
-          if(data.logsClima) {
-            let htmlClima = "";
-            data.logsClima.slice().reverse().forEach(l => { if(l !== "") htmlClima += `<div class="log-line"><span style="color:#00d2d3;">${l}</span></div>`; });
-            logClimaContainer.innerHTML = htmlClima || "Sin registros de promedios aún.";
-          }
-
           if(data.logsMotor) {
             let htmlMotor = "";
             data.logsMotor.slice().reverse().forEach(l => {
@@ -192,7 +182,7 @@
               if (l.includes("físico") || l.includes("Web") || l.includes("Internet")) color = "#3498db"; 
               if (l.includes("FORZADO")) color = "#e67e22"; 
               if (l.includes("STOP") || l.includes("Detenido") || l.includes("soltado") || l.includes("SOBRECARGA") || l.includes("Pico:")) color = "#e74c3c"; 
-              if (l.includes("Iniciado") || l.includes("Umbrales") || l.includes("Horarios")) color = "#f1c40f"; 
+              if (l.includes("Iniciado") || l.includes("Umbrales") || l.includes("Horarios") || l.includes("Wi-Fi")) color = "#f1c40f"; 
               htmlMotor += `<div class="log-line"><span style="color:${color};">${l}</span></div>`;
             });
             const scrollBottom = logContainer.scrollHeight - logContainer.scrollTop <= logContainer.clientHeight + 20;
